@@ -1,10 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/theme-provider";
-import { SessionProvider } from "@/components/session-provider";
-import { ServiceWorkerRegister } from "@/components/sw-register";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -32,13 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${cairo.variable} font-cairo antialiased bg-background text-foreground`}>
-        <SessionProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-            <ServiceWorkerRegister />
-          </ThemeProvider>
-        </SessionProvider>
+        {children}
       </body>
     </html>
   );
