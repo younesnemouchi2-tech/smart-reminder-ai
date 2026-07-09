@@ -81,8 +81,17 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
 
   const formatTime = (dateStr: string | null) => {
     if (!dateStr) return null
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('ar', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    try {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return null
+      const day = d.getDate()
+      const month = d.toLocaleDateString('ar', { month: 'short' })
+      const hour = d.getHours().toString().padStart(2, '0')
+      const minute = d.getMinutes().toString().padStart(2, '0')
+      return `${day} ${month} ${hour}:${minute}`
+    } catch {
+      return null
+    }
   }
 
   return (
@@ -194,8 +203,8 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
                     {task.suggestedTime}
                   </Badge>
                 )}
-                {task.dueDate && (
-                  <Badge variant="outline" className="text-xs">
+                {task.dueDate && formatTime(task.dueDate) && (
+                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
                     <Calendar className="h-3 w-3 ml-1" />
                     {formatTime(task.dueDate)}
                   </Badge>
