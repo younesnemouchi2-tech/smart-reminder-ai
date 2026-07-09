@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Sparkles, Mail, Lock, Loader2, ArrowLeft } from 'lucide-react'
+import { Sparkles, Mail, Lock, Loader2, ArrowLeft, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -55,6 +55,12 @@ function SignInForm() {
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'تسجيل الدخول'}
         </Button>
+        <div className="text-left">
+          <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+            <KeyRound className="h-3.5 w-3.5" />
+            نسيت كلمة المرور؟
+          </Link>
+        </div>
       </form>
       <div className="mt-4 pt-4 border-t text-center text-sm">
         <span className="text-muted-foreground">ليس لديك حساب؟ </span>
