@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { TaskPriority, TaskStatus } from "@prisma/client";
+import { getAuthenticatedUserId } from "@/lib/session";
 
-// GET /api/tasks - List all tasks with optional filters
-export async function GET(request: NextRequest) {
+// GET /api/tasks - List current user's tasks
+export async function GET() {
+  const userIdOrError = await getAuthenticatedUserId();
+  if (userIdOrError instanceof NextResponse) return userIdOrError;
+  const userId = userIdOrError;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const category = searchParams.get("category");
-    const priority = searchParams.get("priority");
-
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
-    if (category) where.category = category;
-    if (priority) where.priority = priority;
-
     const tasks = await db.task.findMany({
-      where,
+      where: { userId },
       orderBy: [
         { status: "asc" },
         { priority: "desc" },
@@ -36,6 +30,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/tasks - Create a new task
 export async function POST(request: NextRequest) {
+  const userIdOrError = await getAuthenticatedUserId();
+  if (userIdOrError instanceof NextResponse) return userIdOrError;
+  const userId = userIdOrError;
+
   try {
     const body = await request.json();
     const { title, description, priority, category, dueDate, suggestedTime, aiSuggestion } = body;
@@ -49,9 +47,10 @@ export async function POST(request: NextRequest) {
 
     const task = await db.task.create({
       data: {
+        userId,
         title: title.trim(),
         description: description?.trim() || null,
-        priority: (priority as TaskPriority) || TaskPriority.MEDIUM,
+        priority: priority || "MEDIUM",
         category: category?.trim() || "general",
         dueDate: dueDate ? new Date(dueDate) : null,
         suggestedTime: suggestedTime || null,

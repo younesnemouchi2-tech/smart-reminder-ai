@@ -1,25 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getAuthenticatedUserId } from "@/lib/session";
 import ZAI from "z-ai-web-dev-sdk";
 
-// GET /api/insights - AI-powered productivity insights
 export async function GET() {
+  const userIdOrError = await getAuthenticatedUserId();
+  if (userIdOrError instanceof NextResponse) return userIdOrError;
+  const userId = userIdOrError;
+
   try {
     const now = new Date();
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
     const logs = await db.productivityLog.findMany({
-      where: { completedAt: { gte: weekAgo } },
+      where: { userId, completedAt: { gte: weekAgo } },
       orderBy: { completedAt: "desc" },
     });
 
     const pendingTasks = await db.task.findMany({
-      where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+      where: { userId, status: { in: ["PENDING", "IN_PROGRESS"] } },
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     });
 
-    // Build data summary for AI
     const hourCounts: Record<number, number> = {};
     const categoryCounts: Record<string, number> = {};
     logs.forEach((log) => {
@@ -64,15 +67,14 @@ export async function GET() {
         thinking: { type: "disabled" },
       });
 
-      insights = completion.choices[0]?.message?.content || generateFallbackInsights(summary);
+      insights = completion.choices[0]?.message?.content || generateFallbackInsights();
     } catch (aiError) {
       console.error("AI error:", aiError);
-      insights = generateFallbackInsights(summary);
+      insights = generateFallbackInsights();
     }
 
     return NextResponse.json({
       insights,
-      summary: summary.trim(),
       stats: {
         totalCompleted: logs.length,
         totalPending: pendingTasks.length,
@@ -82,14 +84,11 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching insights:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch insights" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch insights" }, { status: 500 });
   }
 }
 
-function generateFallbackInsights(summary: string): string {
+function generateFallbackInsights(): string {
   return `📊 **تحليل نمط إنتاجيتك**
 
 بناءً على بياناتك، يبدو أن لديك نشاطاً منتظماً في إنجاز المهام. استمر في هذا الزخم وحاول زيادة عدد المهام في ساعات الذروة.
