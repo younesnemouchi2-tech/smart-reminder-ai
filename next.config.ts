@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   allowedDevOrigins: ["*"],
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [
       {
