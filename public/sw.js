@@ -3,10 +3,12 @@
  * - Caches app shell (HTML, CSS, JS, fonts, icons) for offline use
  * - Network-first for API requests (always fresh data when online)
  * - Cache-first for static assets
+ * - Handles push notifications
+ * - Handles notification clicks
  * - Falls back to offline page when network fails for navigation
  */
 
-const CACHE_VERSION = "v1.0.0";
+const CACHE_VERSION = "v1.1.0";
 const STATIC_CACHE = `smart-reminder-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `smart-reminder-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline.html";
@@ -133,9 +135,83 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// ============================
+// PUSH NOTIFICATIONS
+// ============================
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch {
+      payload = { title: "🔔 تذكير", body: event.data.text() };
+    }
+  }
+
+  const title = payload.title || "🔔 تذكير";
+  const options = {
+    body: payload.body || "",
+    icon: payload.icon || "/icon-192.png",
+    badge: payload.badge || "/icon-192.png",
+    tag: payload.tag || "smart-reminder",
+    data: payload.data || { url: "/" },
+    dir: "rtl",
+    lang: "ar",
+    requireInteraction: payload.requireInteraction || false,
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// Notification click: focus the app or open the URL
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // If app is already open, focus it and navigate
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.focus();
+          if ("navigate" in client) {
+            client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+      // Otherwise open a new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
 // Listen for messages from the client
 self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") {
     self.skipWaiting();
+  }
+  // Allow client to trigger local notifications via SW
+  if (event.data?.type === "SHOW_NOTIFICATION") {
+    const { title, body, tag, data } = event.data.payload || {};
+    event.waitUntil(
+      self.registration.showNotification(title || "🔔 تذكير", {
+        body: body || "",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: tag || "smart-reminder",
+        data: data || { url: "/" },
+        dir: "rtl",
+        lang: "ar",
+        vibrate: [200, 100, 200],
+      })
+    );
   }
 });
