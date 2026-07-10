@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Clock, Trash2, ChevronDown, Sparkles, Calendar, Edit2, X } from 'lucide-react'
+import { Check, Clock, Trash2, ChevronDown, Sparkles, Calendar, Edit2, X, Repeat } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Task, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORY_LABELS, CATEGORY_ICONS, TaskPriority } from '@/lib/types'
+import { Task, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORY_LABELS, CATEGORY_ICONS, TaskPriority, RECURRENCE_LABELS } from '@/lib/types'
 
 interface TaskCardProps {
   task: Task
@@ -207,6 +207,12 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
                   <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
                     <Calendar className="h-3 w-3 ml-1" />
                     {formatTime(task.dueDate)}
+                  </Badge>
+                )}
+                {task.recurrence && task.recurrence !== 'NONE' && (
+                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800">
+                    <Repeat className="h-3 w-3 ml-1" />
+                    {RECURRENCE_LABELS[task.recurrence]}
                   </Badge>
                 )}
               </div>
