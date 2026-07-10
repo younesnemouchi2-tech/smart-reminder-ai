@@ -13,6 +13,7 @@ import { AddTaskDialog } from '@/components/add-task-dialog'
 import { StatsView } from '@/components/stats-view'
 import { InsightsView } from '@/components/insights-view'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationManager } from '@/components/notification-manager'
 import { useToast } from '@/hooks/use-toast'
 import { Task, PRIORITY_LABELS, CATEGORY_LABELS, TaskPriority } from '@/lib/types'
 import { signOut, useSession } from 'next-auth/react'
@@ -55,6 +56,16 @@ export function MainApp() {
     if (!res.ok) throw new Error()
     const { task } = await res.json()
     setTasks((prev) => prev.map((t) => (t.id === id ? task : t)))
+    // If task was completed and is recurring, refetch to get the next occurrence
+    if (data.status === 'COMPLETED' && task.recurrence && task.recurrence !== 'NONE') {
+      try {
+        const refreshRes = await fetch('/api/tasks')
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json()
+          if (refreshData.tasks) setTasks(refreshData.tasks)
+        }
+      } catch {}
+    }
   }
 
   const handleDeleteTask = async (id: string) => {
@@ -104,7 +115,7 @@ export function MainApp() {
 
       <main className="container mx-auto max-w-4xl px-4 py-6 flex-1">
         {activeTab === 'today' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 space-y-3">
             <Card className="p-5 bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border-primary/20">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
@@ -114,6 +125,7 @@ export function MainApp() {
                 <AddTaskDialog onAdd={handleAddTask} />
               </div>
             </Card>
+            <NotificationManager />
           </motion.div>
         )}
 
