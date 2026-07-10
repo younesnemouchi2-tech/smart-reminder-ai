@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Sparkles, Loader2, X, Wand2 } from 'lucide-react'
+import { Plus, Sparkles, Loader2, X, Wand2, Repeat } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,7 +18,13 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { PRIORITY_LABELS, CATEGORY_LABELS, TaskPriority } from '@/lib/types'
+import {
+  PRIORITY_LABELS,
+  CATEGORY_LABELS,
+  RECURRENCE_LABELS,
+  TaskPriority,
+  TaskRecurrence,
+} from '@/lib/types'
 
 interface AddTaskDialogProps {
   onAdd: (task: Record<string, unknown>) => Promise<void>
@@ -31,6 +37,8 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM')
   const [category, setCategory] = useState('general')
   const [dueDate, setDueDate] = useState('')
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>('NONE')
+  const [recurrenceEnd, setRecurrenceEnd] = useState('')
   const [loading, setLoading] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState<{ suggestion: string; suggestedTime: string | null } | null>(null)
@@ -42,6 +50,8 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
     setPriority('MEDIUM')
     setCategory('general')
     setDueDate('')
+    setRecurrence('NONE')
+    setRecurrenceEnd('')
     setAiSuggestion(null)
   }
 
@@ -86,6 +96,8 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
         dueDate: dueDate || undefined,
         suggestedTime: aiSuggestion?.suggestedTime || undefined,
         aiSuggestion: aiSuggestion?.suggestion || undefined,
+        recurrence,
+        recurrenceEnd: recurrenceEnd || undefined,
       })
       resetForm()
       setOpen(false)
@@ -169,6 +181,46 @@ export function AddTaskDialog({ onAdd }: AddTaskDialogProps) {
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+
+          {/* Recurrence Section */}
+          <div className="space-y-2 p-3 rounded-lg border border-primary/20 bg-primary/5">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Repeat className="h-4 w-4" />
+              <span>التكرار</span>
+            </div>
+            <Select
+              value={recurrence}
+              onValueChange={(v) => setRecurrence(v as TaskRecurrence)}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(RECURRENCE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {recurrence !== 'NONE' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-1.5"
+              >
+                <Label htmlFor="recurrenceEnd" className="text-xs">
+                  تاريخ انتهاء التكرار (اختياري)
+                </Label>
+                <Input
+                  id="recurrenceEnd"
+                  type="date"
+                  value={recurrenceEnd}
+                  onChange={(e) => setRecurrenceEnd(e.target.value)}
+                  className="h-9 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عند إكمال مهمة متكررة، سيتم إنشاء نسخة جديدة تلقائياً للتاريخ التالي.
+                </p>
+              </motion.div>
+            )}
           </div>
 
           {/* AI Suggestion Section */}
