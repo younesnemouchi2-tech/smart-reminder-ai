@@ -36,7 +36,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, description, priority, category, dueDate, suggestedTime, aiSuggestion } = body;
+    const {
+      title,
+      description,
+      priority,
+      category,
+      dueDate,
+      suggestedTime,
+      aiSuggestion,
+      recurrence,
+      recurrenceEnd,
+    } = body;
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return NextResponse.json(
@@ -45,6 +55,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate recurrence
+    const validRecurrence = ["NONE", "DAILY", "WEEKLY", "MONTHLY"].includes(recurrence)
+      ? recurrence
+      : "NONE";
+
+    const dueDateObj = dueDate ? new Date(dueDate) : null;
+
     const task = await db.task.create({
       data: {
         userId,
@@ -52,9 +69,12 @@ export async function POST(request: NextRequest) {
         description: description?.trim() || null,
         priority: priority || "MEDIUM",
         category: category?.trim() || "general",
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate: dueDateObj,
+        originalDueDate: dueDateObj,
         suggestedTime: suggestedTime || null,
         aiSuggestion: aiSuggestion || null,
+        recurrence: validRecurrence,
+        recurrenceEnd: recurrenceEnd ? new Date(recurrenceEnd) : null,
       },
     });
 
