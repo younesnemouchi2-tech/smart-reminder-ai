@@ -1,5 +1,6 @@
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+export type TaskRecurrence = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY'
 
 export interface Task {
   id: string
@@ -12,6 +13,10 @@ export interface Task {
   suggestedTime: string | null
   aiSuggestion: string | null
   completedAt: string | null
+  recurrence: TaskRecurrence
+  recurrenceEnd: string | null
+  originalDueDate: string | null
+  lastReminderSent: string | null
   createdAt: string
   updatedAt: string
 }
@@ -54,4 +59,18 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   PENDING: 'قيد الانتظار',
   IN_PROGRESS: 'قيد التنفيذ',
   COMPLETED: 'مكتملة',
+}
+
+export const RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
+  NONE: 'بدون تكرار',
+  DAILY: 'يومي',
+  WEEKLY: 'أسبوعي',
+  MONTHLY: 'شهري',
+}
+
+export const RECURRENCE_ICONS: Record<TaskRecurrence, string> = {
+  NONE: '➡️',
+  DAILY: '🔁',
+  WEEKLY: '📅',
+  MONTHLY: '🗓️',
 }
