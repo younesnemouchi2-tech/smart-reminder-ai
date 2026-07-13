@@ -49,8 +49,12 @@ async function autoAdvanceRecurringTasks(userId: string, tasks: Array<{
 
   for (const task of tasks) {
     if (task.status === "COMPLETED") continue;
-    if (!task.dueDate) continue;
     if (task.recurrence === "NONE") continue;
+    // If a recurring task has no dueDate, set it to now so it shows in Today
+    if (!task.dueDate) {
+      advanceUpdates.push({ id: task.id, newDue: new Date() });
+      continue;
+    }
 
     let currentDue = new Date(task.dueDate);
     // If the task is already due today or in the future, leave it alone
@@ -192,7 +196,13 @@ export async function POST(request: NextRequest) {
       ? recurrence
       : "NONE";
 
-    const dueDateObj = dueDate ? new Date(dueDate) : null;
+    // For recurring tasks (DAILY/WEEKLY/MONTHLY) without a dueDate,
+    // default the dueDate to now so the task shows up in the Today view
+    // and the recurrence engine has a starting point.
+    let dueDateObj = dueDate ? new Date(dueDate) : null;
+    if (!dueDateObj && validRecurrence !== "NONE") {
+      dueDateObj = new Date();
+    }
 
     const task = await db.task.create({
       data: {
