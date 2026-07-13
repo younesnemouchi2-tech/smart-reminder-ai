@@ -85,10 +85,10 @@ export function MainApp() {
 
   const todayTasks = filteredTasks.filter((task) => {
     if (task.status === 'COMPLETED') return false
-    // Show in Today tab if:
+    // Show in Today tab ONLY if:
     // 1. Task has a dueDate and it's today (any time today)
-    // 2. Task has a dueDate in the past and is still pending (overdue → must be done today)
-    // 3. Task was created today without a dueDate
+    // 2. Task was created today without a dueDate
+    // Overdue tasks (past dueDate) are NOT shown in Today — they stay in "All Tasks"
     if (!task.dueDate) {
       const taskCreated = new Date(task.createdAt)
       const today = new Date()
@@ -98,10 +98,10 @@ export function MainApp() {
     }
     const due = new Date(task.dueDate)
     const today = new Date()
-    // Include tasks due today OR overdue (due in the past, not yet completed)
-    // We use end-of-today as the upper bound so future tasks don't appear
+    // Only show tasks due today (between start and end of today)
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0)
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
-    return due.getTime() <= endOfToday.getTime()
+    return due.getTime() >= startOfToday.getTime() && due.getTime() <= endOfToday.getTime()
   })
 
   const displayTasks = activeTab === 'today' ? todayTasks : filteredTasks
