@@ -20,6 +20,19 @@ function getNextRecurrenceDate(currentDue: Date, recurrence: string): Date | nul
   }
 }
 
+// Check if a date is the same calendar day as "now" or later.
+// We use this so a task due at 9 AM today isn't considered "overdue"
+// when the current time is 3 PM — it's still today's task.
+function isSameDayOrLater(date: Date, now: Date): boolean {
+  // Compare year/month/day — if same day, return true.
+  // If date is in a future day, return true.
+  if (date.getFullYear() > now.getFullYear()) return true;
+  if (date.getFullYear() < now.getFullYear()) return false;
+  if (date.getMonth() > now.getMonth()) return true;
+  if (date.getMonth() < now.getMonth()) return false;
+  return date.getDate() >= now.getDate();
+}
+
 /**
  * Auto-advance overdue recurring tasks to the next future occurrence.
  * This is called whenever tasks are fetched, so the user always sees
@@ -57,8 +70,10 @@ async function autoAdvanceRecurringTasks(userId: string, tasks: Array<{
     }
 
     let currentDue = new Date(task.dueDate);
-    // If the task is already due today or in the future, leave it alone
-    if (currentDue.getTime() >= now.getTime()) continue;
+    // If the task is due today or in the future, leave it alone.
+    // We compare by calendar DAY, not by exact timestamp — a task due at
+    // 9 AM today should still show in Today even if it's now 3 PM.
+    if (isSameDayOrLater(currentDue, now)) continue;
 
     // Check if recurrenceEnd has already passed → convert to non-recurring
     if (task.recurrenceEnd && task.recurrenceEnd.getTime() < now.getTime()) {
@@ -66,11 +81,12 @@ async function autoAdvanceRecurringTasks(userId: string, tasks: Array<{
       continue;
     }
 
-    // Keep advancing by one interval until we reach today or later
-    // (cap at 365 iterations to prevent infinite loops in pathological cases)
+    // Keep advancing by one interval until we reach today or a future day.
+    // We use day-level comparison (not exact timestamp) so a task due
+    // yesterday at 9 AM advances to today at 9 AM (not to tomorrow).
     let iterations = 0;
     let recurrenceEnded = false;
-    while (currentDue.getTime() < now.getTime() && iterations < 365) {
+    while (!isSameDayOrLater(currentDue, now) && iterations < 365) {
       const next = getNextRecurrenceDate(currentDue, task.recurrence);
       if (!next) break;
       // Respect recurrenceEnd: if next occurrence is after recurrenceEnd,
